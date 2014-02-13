@@ -1,0 +1,34 @@
+---
+deployment: test
+director_uuid: test-uuid
+
+resource_pools:
+  - name: pool0
+    size: 1000000
+
+jobs:
+  - name: go0o
+    instances: 1
+    resource_pool: pool0
+  - name: go0i
+    instances: 10000
+    resource_pool: pool0
+  - name: stop0o
+    instances: 10000
+    resource_pool: pool0
+  - name: stop0i
+    instances: 1
+    resource_pool: pool0
+
+  - name: go1o
+    instances: 2
+    resource_pool: pool0
+  - name: go1i
+    instances: 9999
+    resource_pool: pool0
+  - name: stop1o
+    instances: 10000
+    resource_pool: pool0
+  - name: stop1i
+    instances: 1
+    resource_pool: pool0
