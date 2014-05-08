@@ -11,6 +11,7 @@ require 'scaler/collector.rb'
 require 'scaler/collectors/bosh_nats_collector.rb'
 require 'scaler/collectors/bosh_rest_collector.rb'
 require 'scaler/collectors/cf_varz_collector.rb'
+require 'scaler/collectors/cf_varz_tsdb_collector.rb'
 
 require 'scaler/listeners/bosh_scaler.rb'
 require 'scaler/listeners/bosh_scaler/heartbeat_processor.rb'

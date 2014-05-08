@@ -16,7 +16,7 @@ collectors:
   - class: BoshNatsCollector
     bosh_nats: *nats
     bosh_rest: *rest
-  - class: CfVarzCollector # Optional for CF
+  - class: CfVarzTsdbCollector # Optional for CF
     port: 4567
 
 listeners:
