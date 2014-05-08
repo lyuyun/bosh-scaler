@@ -53,7 +53,7 @@ module Scaler::Listener
           processor.drop_missing_entities
         end
       end
-      logger.info('Starting BOSH Scaler is running')
+      logger.info('BOSH Scaler is running')
     end
 
     def try_rules

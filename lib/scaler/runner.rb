@@ -29,7 +29,7 @@ module Scaler
 
     def start
       Bhm.logger = @logger
-      @logger.debug('Starting...')
+      @logger.info('Starting...')
 
       initialize_listeners
       processor = EventProcessor.new(@listeners, @logger)
