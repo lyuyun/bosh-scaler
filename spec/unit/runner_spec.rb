@@ -9,6 +9,9 @@ describe Scaler::Runner do
 
   describe '.run' do
     it 'starts runner' do
+      expect_any_instance_of(Scaler::EventProcessor)
+        .to receive(:run)
+
       expect_any_instance_of(Scaler::Listener::BoshScaler)
         .to receive(:run)
 

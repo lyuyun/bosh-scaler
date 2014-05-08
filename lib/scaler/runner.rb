@@ -32,12 +32,14 @@ module Scaler
       @logger.debug('Starting...')
 
       initialize_listeners
-      initialize_collectors(EventProcessor.new(@listeners))
+      processor = EventProcessor.new(@listeners, @logger)
+      initialize_collectors(processor)
 
       EM.epoll
       EM.kqueue
       EM.run do
         setup_signals
+        processor.run
         run_listeners
         run_collectors
       end

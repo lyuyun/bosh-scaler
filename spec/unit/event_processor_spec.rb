@@ -1,7 +1,9 @@
 require 'spec_helper'
 
 describe Scaler::EventProcessor do
-  subject(:processor) { Scaler::EventProcessor.new(listeners) }
+  include_context 'default values'
+
+  subject(:processor) { Scaler::EventProcessor.new(listeners, logger) }
 
   describe '#process' do
     let(:listeners) { [listener0, listener1] }
@@ -9,6 +11,7 @@ describe Scaler::EventProcessor do
     let(:listener1) { instance_double(Bosh::Monitor::Plugins::Base) }
 
     let(:event) { instance_double(Bosh::Monitor::Events::Base) }
+
     it 'redirects events to registered listeners' do
       expect(listener0).to receive(:process).with(event)
       expect(listener1).to receive(:process).with(event)
