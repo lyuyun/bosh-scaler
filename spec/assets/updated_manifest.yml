@@ -4,7 +4,7 @@ director_uuid: test-uuid
 
 resource_pools:
   - name: pool0
-    size: 3
+    size: 705
   - name: pool1 # with standby
     size: 4
 
@@ -13,7 +13,7 @@ jobs:
     instances: 1
     resource_pool: pool0
   - name: job0b
-    instances: 2
+    instances: 704
     resource_pool: pool0
   - name: job1a
     instances: 2
@@ -47,6 +47,5 @@ scale:
             additional: value_in0b
   networks:
     - name: net00
-      static_ips:
-        - 192.168.39.2
+      static_ips: []
     - name: net01

@@ -14,6 +14,10 @@ shared_context 'default values' do
   let(:base_manifest) {
     File.read(File.join(assets_dir, 'base_manifest.yml'))
   }
+  let(:updated_manifest) {
+    File.read(File.join(assets_dir, 'updated_manifest.yml'))
+  }
+
   let(:logger) { Logger.new('/dev/null') }
 
   let(:bosh_nats_options) {

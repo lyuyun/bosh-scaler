@@ -26,5 +26,6 @@ require 'scaler/cf_varz_metrics.rb'
 require 'scaler/deployment.rb'
 require 'scaler/deployment/job.rb'
 require 'scaler/deployment/resource_pool.rb'
+require 'scaler/deployment/scale.rb'
 
 require 'scaler/runner.rb'

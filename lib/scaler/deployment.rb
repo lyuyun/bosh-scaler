@@ -2,11 +2,15 @@ module Scaler
   class Deployment
     attr_reader :resource_pools
     attr_reader :jobs
+    attr_reader :scale
 
     def initialize(manifest)
       @resource_pools = parse_resource_pools(manifest)
+
       @jobs = parse_jobs(manifest)
       calculate_standby_size(manifest)
+
+      @scale = parse_scale(manifest)
 
       @manifest = manifest
     end
@@ -33,6 +37,10 @@ module Scaler
       result
     end
 
+    def parse_scale(manifest)
+      Scale.new(manifest)
+    end
+
     def calculate_standby_size(manifest)
       manifest['resource_pools'].each do |hash|
         pool = resource_pool(hash['name'])
@@ -56,6 +64,15 @@ module Scaler
       updated_manifest['resource_pools'].each do |manifest_pool|
         manifest_pool['size'] = resource_pool(manifest_pool['name']).size
       end
+      if updated_manifest['scale'] &&
+          updated_manifest['scale']['networks'] &&
+        updated_manifest['scale']['networks'].each do |manifest_network|
+          next if manifest_network['static_ips'].nil?
+          manifest_network['static_ips'] =
+            scale.network(manifest_network['name']).static_ips
+        end
+      end
+
       updated_manifest.to_yaml
     end
   end

@@ -3,11 +3,11 @@ require 'spec_helper'
 describe Scaler::Deployment do
   include_context 'default values'
 
-  describe '#initialize' do
-    subject(:deployment) {
-      Scaler::Deployment.new(YAML.load(base_manifest))
-    }
+  subject(:deployment) {
+    Scaler::Deployment.new(YAML.load(base_manifest))
+  }
 
+  describe '#initialize' do
     it 'loads manifest and construct objects' do
       expect(deployment.jobs.keys)
         .to eq(%w{job0a job0b job1a})
@@ -40,6 +40,16 @@ describe Scaler::Deployment do
         .to receive(:new)
         .with(YAML.load(base_manifest))
       Scaler::Deployment.load_yaml(base_manifest)
+    end
+  end
+
+  describe '#to_yaml' do
+    it 'reflects updated values' do
+      deployment.job('job0b').increase_size(702)
+      deployment.scale.network('net00').provision_static_ip
+      expect(YAML.load(deployment.to_yaml)).to eq(
+        YAML.load(updated_manifest)
+      )
     end
   end
 end
