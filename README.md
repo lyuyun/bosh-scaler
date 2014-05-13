@@ -32,12 +32,82 @@ bundle exec ./bin/scaler ./config/sample.yml
 ```
 
 
-Configuration
-=============
+Basic Configuration
+===================
 
 See `config/sample.yml` for the basic configuration.
 
+
+Defining Scaling Rules
+======================
+
+You can define scaling rules in your deployment manifests.
+
+```yaml
+---
+deployment: cf
+
+jobs:
+  - name: router
+    instances: 1
+    resource_pool: medium_z1
+    templates:
+      - gorouter
+  - name: runner
+    instances: 3
+    resource_pool: large_z1
+    templates:
+      - dea_next
+      - dea_logging_agent
+
+...snip...
+
+scale:
+  jobs:
+    - name: router                            # Job name to scale
+      cooldown: 300                           # seconds
+      out:                                    # Scaling-out
+        limit: 10                             # maximum instances
+        unit: 2                               # Adds 2 instances at every event (default: 1)
+        conditions:                           # Joined with OR for scaling-out
+          - class: CpuAverage                 # CPU usage average
+            larger_than: 80                   # Threshold (percent)
+            duration: 300                     # For calculating average
+          - class: MemoryAverage              # Memory usage average
+            larger_than: 90                   # Threshold (percent)
+            duration: 300                     # For calculating average
+      in:                                     # Scaling-in
+        limit: 3                              # minimum instances
+        conditions:                           # Joined with AND for scaling-in
+          - class: CpuAverage                 # CPU usage average
+            smaller_than: 10                  # percent
+            duration: 300                     # For calculating average
+          - class: MemoryAverage              # Memory usage average
+            smaller_than: 20                  # Threshold (percent)
+            duration: 300                     # For calculating average
+    - name: runner
+      cooldown: 300
+      out:
+        limit: 20
+        conditions:
+          - class: CfVarzAverage              # Cloud Foundry Metrics
+            varz_job: DEA                     # varz job name
+            varz_key: available_memory_ratio  # varz key name
+            smaller_than: 10
+            duration: 300
+      in:
+        limit: 3
+        conditions:
+          - class: CfVarzAverage
+            varz_job: DEA
+            varz_key: available_memory_ratio
+            larger_than: 80
+            duration: 300
+```
+
 ### Available conditions classes
+
+#### BOSH Heartbeat
 
 * CpuAverage
   * Average CPU percentage during `duration`
@@ -49,6 +119,9 @@ See `config/sample.yml` for the basic configuration.
   * Latest Load Average in 5 minutes
 * LoadAverage15
   * Latest Load Average in 15 minute
+
+#### CF VARZ metrics
+
 * CfVarzAverage
   * Average CF Varz value during `duration`
 
@@ -56,37 +129,18 @@ See `config/sample.yml` for the basic configuration.
 CF Plugin
 =========
 
-To utilize the `CfVarzAverage` class in rule conditions, `CfVarzCollector` must be activated. `CfVarzCollector` launches an HTTP server at a configured port and you can send Varz metrics to the server from your CF deployment using the Collector.
+BOSH AutoScaler supports input from Cloud Foundry Collector. To use the `CfVarzAverage` condtion in your manifest file, send metrics to yoru AutoScaler with the TSDB historian.
 
-You need to configure your Collector to send metrics to your scaler. The `cf_metrics` historian is available for sending metrics to the scaler.
-
-### Note
-
-The `cf_metrics` historian has a hard-coded `https` scheme in the endpoint URL. You need to setup a SSL reverse-proxy server to translate `https` to `http` or [modify the endpoint URL](https://github.com/cloudfoundry/collector/blob/master/lib/collector/historian/cf_metrics.rb#L34). `CfVarzCollector` does not support the SSL at this moement.
-
-### Sample Collector configuration
+### Sample Collector configuration with cf-release
 
 ```yaml
-index: 0
-
-logging:
-  level: debug
-  file: /tmp/collector_test.log
-  syslog: vcap.collector
-
-mbus: nats://nats:c1oudc0cf.nats.host.name:4222
-
-intervals:
-  discover: 60
-  varz: 10
-  healthz: 5
-  local_metrics: 10
-  prune: 300
-  nats_ping: 10
-
-deployment_name: cf
-cf_metrics:
-  host: auto.scaler.ip.address:4567
+properties:
+  collector:
+    use_tsdb: true
+    deployment_name: cf
+  opentsdb:
+    address: 192.168.15.139     # your AutoScaler address
+    port: 4567                  # your AutoScaler port
 ```
 
 

@@ -54,6 +54,22 @@ describe Scaler::Deployment::Scale::Job do
     end
   end
 
+  describe '#out_unit' do
+    it 'returns the given out unit' do
+      expect(job.out_unit).to eq(3)
+    end
+
+    context 'out unit is not defined' do
+      subject(:job) {
+        deployment.scale.job('job0b')
+      }
+
+      it 'returns nil' do
+        expect(job.out_unit).to eq(nil)
+      end
+    end
+  end
+
   describe '#out_conditions' do
     it 'returns the given condition list' do
       expect(job.out_conditions.size).to eq(1)
@@ -67,6 +83,22 @@ describe Scaler::Deployment::Scale::Job do
   describe '#in_limit' do
     it 'returns the given out limit' do
       expect(job.in_limit).to eq(3)
+    end
+  end
+
+  describe '#in_unit' do
+    it 'returns the given in unit' do
+      expect(job.in_unit).to eq(2)
+    end
+
+    context 'in unit is not defined' do
+      subject(:job) {
+        deployment.scale.job('job0b')
+      }
+
+      it 'returns nil' do
+        expect(job.in_unit).to eq(nil)
+      end
     end
   end
 
@@ -100,19 +132,20 @@ describe Scaler::Deployment::Scale::Network do
 
   describe '#static_ips' do
     it 'returns the given static ip address list' do
-      expect(network.static_ips).to eq(['192.168.39.2'])
+      expect(network.static_ips).to eq(%w{10.39.3.100 10.39.3.101})
     end
   end
 
-  describe '#provision_static_ip' do
+  describe '#pop_static_ip' do
     it 'returns a static IP address and remove it from the list' do
-      expect(network.provision_static_ip).to eq('192.168.39.2')
+      expect(network.pop_static_ip).to eq('10.39.3.101')
     end
 
-    it 'raise an error when no static IP address avaiable' do
-      expect(network.provision_static_ip).to eq('192.168.39.2')
+    it 'raises an error when no static IP address avaiable' do
+      network.pop_static_ip
+      network.pop_static_ip
       expect {
-        network.provision_static_ip
+        network.pop_static_ip
       }.to raise_error
     end
   end

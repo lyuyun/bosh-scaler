@@ -10,9 +10,9 @@ describe Scaler::Deployment do
   describe '#initialize' do
     it 'loads manifest and construct objects' do
       expect(deployment.jobs.keys)
-        .to eq(%w{job0a job0b job1a})
+        .to eq(%w{job0a job0b job1a job2a})
       expect(deployment.resource_pools.keys)
-        .to eq(%w{pool0 pool1})
+        .to eq(%w{pool0 pool1 pool2})
 
       expect(deployment.resource_pool('pool0').jobs.keys)
         .to eq(%w{job0a job0b})
@@ -46,9 +46,14 @@ describe Scaler::Deployment do
   describe '#to_yaml' do
     it 'reflects updated values' do
       deployment.job('job0b').increase_size(702)
-      deployment.scale.network('net00').provision_static_ip
+      deployment.job('job2a').increase_size_with_care(1)
       expect(YAML.load(deployment.to_yaml)).to eq(
         YAML.load(updated_manifest)
+      )
+      deployment.job('job0b').decrease_size(702)
+      deployment.job('job2a').decrease_size_with_care(1)
+      expect(YAML.load(deployment.to_yaml)).to eq(
+        YAML.load(base_manifest)
       )
     end
   end

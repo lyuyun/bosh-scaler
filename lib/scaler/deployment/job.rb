@@ -5,11 +5,21 @@ module Scaler
       attr_reader :name
       attr_accessor :size
       attr_reader :resource_pool
+      attr_reader :networks
 
-      def initialize(deployment, name, size)
+      def initialize(deployment, definition)
         @deployment = deployment
-        @name = name
-        @size = size
+        @definition = definition
+        @name = definition['name'].dup
+        @size = definition['instances']
+
+        if definition['networks']
+          @networks = {}
+          definition['networks'].each do |network_definition|
+            network = Network.new(network_definition)
+            @networks[network.name] = network
+          end
+        end
 
         @resource_pool = nil
       end
@@ -33,6 +43,87 @@ module Scaler
         @size = size - num
         if @size < 0
           fail 'Setting a negative number to Job size is not allowed'
+        end
+      end
+
+      def add_static_ip(num)
+        (@networks || []).each do |_, network|
+          if network.static_ips_defined?
+            scale_network = @deployment.scale.network(network.name)
+            num.times do
+              ip = scale_network.pop_static_ip
+              network.add_static_ip(ip)
+            end
+          end
+        end
+      end
+
+      def remove_static_ip(num)
+        (@networks || []).each do |_, network|
+          if network.static_ips_defined?
+            scale_network = @deployment.scale.network(network.name)
+            num.times do
+              ip = network.remove_static_ip
+              scale_network.push_static_ip(ip)
+            end
+          end
+        end
+      end
+
+      def increase_size_with_care(num)
+        increase_size(num)
+        add_static_ip(num)
+      end
+
+      def decrease_size_with_care(num)
+        decrease_size(num)
+        remove_static_ip(num)
+      end
+
+      def network(name)
+        @networks[name]
+      end
+
+      def apply_changes
+        unless @networks.nil?
+          @networks.each { |_, o| o.apply_changes }
+        end
+        @definition['instances'] = @size
+      end
+    end
+
+    class Network
+      attr_reader :name
+      attr_reader :static_ips
+
+      def initialize(definition)
+        @definition = definition
+        @name = definition['name'].dup
+
+        if definition['static_ips']
+          @static_ips = definition['static_ips'].dup
+        end
+      end
+
+      def static_ips_defined?
+        # empty array returns true
+        ! @static_ips.nil?
+      end
+
+      def add_static_ip(ip)
+        fail if @static_ips.nil?
+        @static_ips.push(ip)
+      end
+
+      def remove_static_ip
+        fail if @static_ips.nil?
+        fail if @static_ips.empty?
+        @static_ips.pop
+      end
+
+      def apply_changes
+        if @static_ips
+          @definition['static_ips'] = @static_ips.dup
         end
       end
     end

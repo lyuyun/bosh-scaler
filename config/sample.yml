@@ -1,13 +1,13 @@
 ---
 # BOSH NATS settings
 nats: &nats
-  uri: mbus://10.1.1.39:4222
+  uri: mbus://192.168.50.4:21084
   user: nats
   pass: nats
 
 # BOSH Director REST API settings
 rest: &rest
-  endpoint_uri: https://10.1.1.39:25555
+  endpoint_uri: https://192.168.50.4:25555
   user: admin
   password: admin
   disable_verify_certification: true
@@ -24,38 +24,3 @@ listeners:
     bosh_rest: *rest
     interval: 60 # seconds
     buffer_size: 1000
-    rules:
-      - deployment: cf
-        job: router
-        cooldown: 300 # seconds
-        out:
-          limit: 10 # max instance size
-          condition:
-            class: CpuAverage
-            larger_than: 80 # % for CpuAverage
-            duration: 300 # seconds
-        in:
-          limit: 2 # minimum instance size
-          condition:
-            class: CpuAverage
-            smaller_than: 10
-            duration: 300
-      - deployment: cf
-        job: dea
-        cooldown: 300
-        out:
-          limit: 20
-          condition:
-            class: CfVarzAverage
-            varz_job: DEA # varz JOB name
-            varz_key: available_memory_ratio # varz key name
-            smaller_than: 10
-            duration: 120
-        in:
-          limit: 5
-          condition:
-            class: CfVarzAverage
-            varz_job: DEA
-            varz_key: available_memory_ratio
-            larger_than: 80
-            duration: 120

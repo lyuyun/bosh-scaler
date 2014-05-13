@@ -5,9 +5,10 @@ module Scaler
       attr_reader :name
       attr_accessor :standby_size
 
-      def initialize(deployment, name)
+      def initialize(deployment, definition)
         @deployment = deployment
-        @name = name
+        @definition = definition
+        @name = definition['name'].dup
         @standby_size = 0
       end
 
@@ -21,6 +22,10 @@ module Scaler
 
       def active_size
         jobs.values.reduce(0) { |sum, job| sum + job.size }
+      end
+
+      def apply_changes
+        @definition['size'] = size
       end
     end
   end

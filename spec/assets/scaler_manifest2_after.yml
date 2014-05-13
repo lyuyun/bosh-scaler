@@ -1,0 +1,42 @@
+---
+deployment: test2
+director_uuid: test-uuid
+
+resource_pools:
+  - name: pool0
+    size: 1000000
+
+jobs:
+  - name: job0
+    instances: 2
+    resource_pool: pool0
+  - name: job1
+    instances: 9999
+    resource_pool: pool0
+
+scale:
+  jobs:
+    - name: job0
+      cooldown: 39
+      out:
+        limit: 8
+        conditions:
+          - class: MemoryAverage
+            larger_than: 77
+      in:
+        limit: 2
+        conditions:
+          - class: CpuAverage
+            smaller_than: 3
+    - name: job1
+      cooldown: 33
+      out:
+        limit: 9
+        conditions:
+          - class: MemoryAverage
+            larger_than: 77
+      in:
+        limit: 4
+        conditions:
+          - class: CpuAverage
+            smaller_than: 3

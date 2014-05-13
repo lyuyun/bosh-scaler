@@ -1,5 +1,14 @@
 class Scaler::Listener::BoshScaler
-  module Condition
+  class Condition
+    def self.load_by_definition(processors, deployment_name, job_name, options)
+      const_get(options['class'] + 'Condition').load(
+        processors,
+        deployment_name,
+        job_name,
+        options
+        )
+    end
+
     class Base
       def initialize(processor, deployment_name, job_name, threshold_proc)
         @processor = processor

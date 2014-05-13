@@ -1,5 +1,5 @@
 ---
-deployment: test
+deployment: test1
 director_uuid: test-uuid
 
 resource_pools:
@@ -8,10 +8,10 @@ resource_pools:
 
 jobs:
   - name: go0o
-    instances: 2
+    instances: 1
     resource_pool: pool0
   - name: go0i
-    instances: 9999
+    instances: 10000
     resource_pool: pool0
   - name: stop0o
     instances: 10000
@@ -32,3 +32,27 @@ jobs:
   - name: stop1i
     instances: 1
     resource_pool: pool0
+
+scale:
+  jobs:
+    - name: go0o
+      cooldown: 39
+      out:
+        limit: 39
+        conditions:
+          - class: CpuAverage
+            larger_than: 80
+          - class: MemoryAverage
+            larger_than: 70
+      in:
+        limit: 7
+        conditions:
+          - class: CpuAverage
+            smaller_than: 10
+    - name: go0i
+      cooldown: 702
+      out:
+        limit: 101
+        conditions:
+          - class: MemoryAverage
+            larger_than: 93

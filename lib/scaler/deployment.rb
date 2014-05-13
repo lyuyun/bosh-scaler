@@ -21,8 +21,9 @@ module Scaler
 
     def parse_resource_pools(manifest)
       result = {}
-      manifest['resource_pools'].each do |hash|
-        result[hash['name']] = ResourcePool.new(self, hash['name'])
+      manifest['resource_pools'].each do |definition|
+        resource_pool = ResourcePool.new(self, definition)
+        result[resource_pool.name] = resource_pool
       end
       result
     end
@@ -30,7 +31,7 @@ module Scaler
     def parse_jobs(manifest)
       result = {}
       manifest['jobs'].each do |hash|
-        job = Job.new(self, hash['name'], hash['instances'])
+        job = Job.new(self, hash)
         result[hash['name']] = job
         job.join_resorce_pool(resource_pool(hash['resource_pool']))
       end
@@ -57,23 +58,11 @@ module Scaler
     end
 
     def to_yaml
-      updated_manifest = @manifest.dup
-      updated_manifest['jobs'].each do |manifest_job|
-        manifest_job['instances'] = job(manifest_job['name']).size
-      end
-      updated_manifest['resource_pools'].each do |manifest_pool|
-        manifest_pool['size'] = resource_pool(manifest_pool['name']).size
-      end
-      if updated_manifest['scale'] &&
-          updated_manifest['scale']['networks'] &&
-        updated_manifest['scale']['networks'].each do |manifest_network|
-          next if manifest_network['static_ips'].nil?
-          manifest_network['static_ips'] =
-            scale.network(manifest_network['name']).static_ips
-        end
-      end
+      @jobs.each { |_, o| o.apply_changes }
+      @resource_pools.each { |_, o| o.apply_changes }
+      @scale.apply_changes
 
-      updated_manifest.to_yaml
+      @manifest.to_yaml
     end
   end
 end

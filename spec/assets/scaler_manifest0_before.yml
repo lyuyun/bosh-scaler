@@ -1,0 +1,58 @@
+---
+deployment: test0
+director_uuid: test-uuid
+
+resource_pools:
+  - name: pool0
+    size: 1000000
+
+jobs:
+  - name: go0o
+    instances: 1
+    resource_pool: pool0
+  - name: go0i
+    instances: 10000
+    resource_pool: pool0
+  - name: stop0o
+    instances: 10000
+    resource_pool: pool0
+  - name: stop0i
+    instances: 1
+    resource_pool: pool0
+
+  - name: go1o
+    instances: 1
+    resource_pool: pool0
+  - name: go1i
+    instances: 10000
+    resource_pool: pool0
+  - name: stop1o
+    instances: 10000
+    resource_pool: pool0
+  - name: stop1i
+    instances: 1
+    resource_pool: pool0
+
+scale:
+  jobs:
+    - name: go1o
+      cooldown: 39
+      out:
+        limit: 8
+        unit: 3
+        conditions:
+          - class: MemoryAverage
+            larger_than: 77
+      in:
+        limit: 2
+        unit: 4
+        conditions:
+          - class: CpuAverage
+            smaller_than: 3
+    - name: go1i
+      cooldown: 702
+      in:
+        limit: 2
+        conditions:
+          - class: MemoryAverage
+            smaller_than: 13

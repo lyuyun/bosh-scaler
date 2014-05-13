@@ -7,6 +7,9 @@ resource_pools:
     size: 705
   - name: pool1 # with standby
     size: 4
+  - name: pool2
+    size: 10000
+
 
 jobs:
   - name: job0a
@@ -18,6 +21,15 @@ jobs:
   - name: job1a
     instances: 2
     resource_pool: pool1
+  - name: job2a
+    instances: 3
+    resource_pool: pool2
+    networks:
+      - name: net00
+        static_ips:
+          - 10.39.3.9
+          - 10.39.3.10
+          - 10.39.3.101
 
 scale:
   jobs:
@@ -25,11 +37,13 @@ scale:
       cooldown: 39
       out:
         limit: 9
+        unit: 3
         conditions:
           - class: dummy_out0a
             additional: value_out0a
       in:
         limit: 3
+        unit: 2
         conditions:
           - class: dummy_in0a
             additional: value_in0a
@@ -47,5 +61,6 @@ scale:
             additional: value_in0b
   networks:
     - name: net00
-      static_ips: []
+      static_ips:
+        - 10.39.3.100
     - name: net01
