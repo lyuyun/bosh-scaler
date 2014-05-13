@@ -54,7 +54,8 @@ module Scaler::Collector
         @logger.info("NATS connected to #{@nats_client_options[:uri]}")
       end
       nats.on_error do |e|
-        # TODO
+        @logger.error("NATS faild to connected to #{@nats_client_options[:uri]}")
+        fail "NATS faild to connected to #{@nats_client_options[:uri]}"
       end
       nats
     end
@@ -72,7 +73,6 @@ module Scaler::Collector
       attributes['timestamp'] = Time.now.to_i
       attributes['agent_id'] = agent_id
       attributes['deployment'] = @deployments[agent_id]
-
       @processor.process(Bosh::Monitor::Events::Heartbeat.new(attributes))
     end
   end
