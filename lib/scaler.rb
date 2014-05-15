@@ -17,6 +17,7 @@ require 'scaler/listeners/bosh_scaler.rb'
 require 'scaler/listeners/bosh_scaler/heartbeat_processor.rb'
 require 'scaler/listeners/bosh_scaler/cf_varz_processor.rb'
 require 'scaler/listeners/bosh_scaler/conditions.rb'
+require 'scaler/listeners/bosh_scaler/ui.rb'
 
 require 'scaler/bosh_client.rb'
 require 'scaler/task.rb'

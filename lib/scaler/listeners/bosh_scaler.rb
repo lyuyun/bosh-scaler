@@ -1,8 +1,16 @@
 module Scaler::Listener
   class BoshScaler < Bosh::Monitor::Plugins::Base
+    attr_reader :rules
+
     def initialize(options = {})
       @buffer_size = options['buffer_size']
       @interval = options['interval']
+      @ui_enabled = false
+      if options['ui'] && options['ui']['enable']
+        @ui_enabled = true
+        fail 'Port number for UI is not given' if options['ui']['port'].nil?
+        @ui_port = options['ui']['port']
+      end
       @bosh_client = Scaler::BoshClient.load(options['bosh_rest'])
       setup_processors(options)
       super
@@ -34,6 +42,11 @@ module Scaler::Listener
           processor.drop_missing_entities
         end
       end
+
+      if @ui_enabled
+        Ui.new(self, @ui_port, logger).run
+      end
+
       logger.info('BOSH Scaler is running')
     end
 
@@ -57,8 +70,8 @@ module Scaler::Listener
             :last_fired_time => now,
             :out_limit => job.out_limit,
             :in_limit => job.in_limit,
-            :out_unit => job.out_unit,
-            :in_unit => job.in_unit,
+            :out_unit => job.out_unit || 1,
+            :in_unit => job.in_unit || 1,
             :out_conditions => [],
             :in_conditions => []
           }
@@ -161,16 +174,14 @@ module Scaler::Listener
 
       jobs[:out].each do |job|
         if deployment.job(job[:name]).size < job[:out_limit]
-          unit = job[:out_unit] || 1
-          deployment.job(job[:name]).increase_size_with_care(unit)
+          deployment.job(job[:name]).increase_size_with_care(job[:out_unit])
           processed_jobs << job
         end
       end
 
       jobs[:in].each do |job|
         if deployment.job(job[:name]).size > job[:in_limit]
-          unit = job[:in_unit] || 1
-          deployment.job(job[:name]).decrease_size_with_care(unit)
+          deployment.job(job[:name]).decrease_size_with_care(job[:in_unit])
           processed_jobs << job
         end
       end

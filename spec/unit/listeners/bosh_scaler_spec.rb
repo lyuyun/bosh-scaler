@@ -45,8 +45,8 @@ describe Scaler::Listener::BoshScaler do
     expect(job[:cooldown_time]).to eq(cooldown_time)
     expect(job[:out_limit]).to eq(out_limit)
     expect(job[:in_limit]).to eq(in_limit)
-    expect(job[:out_unit]).to eq(out_unit)
-    expect(job[:in_unit]).to eq(in_unit)
+    expect(job[:out_unit]).to eq(out_unit || 1)
+    expect(job[:in_unit]).to eq(in_unit || 1)
     expect_list_matches(job[:out_conditions], out_condition_classes)
     expect_list_matches(job[:in_conditions], in_condition_classes)
   end
@@ -85,12 +85,12 @@ describe Scaler::Listener::BoshScaler do
         [Scaler::Listener::BoshScaler::Condition::CpuAverageCondition]
       )
       expect_rule_defined(
-        rules, 'test0', 'go1i', 702, nil, 2, nil, nil,
+        rules, 'test0', 'go1i', 702, nil, 2, 1, 1,
         [],
         [Scaler::Listener::BoshScaler::Condition::MemoryAverageCondition]
       )
       expect_rule_defined(
-        rules, 'test1', 'go0o', 39, 39, 7, nil, nil,
+        rules, 'test1', 'go0o', 39, 39, 7, 1, 1,
         [
           Scaler::Listener::BoshScaler::Condition::CpuAverageCondition,
           Scaler::Listener::BoshScaler::Condition::MemoryAverageCondition
@@ -98,7 +98,7 @@ describe Scaler::Listener::BoshScaler do
         [Scaler::Listener::BoshScaler::Condition::CpuAverageCondition]
       )
       expect_rule_defined(
-        rules, 'test1', 'go0i', 702, 101, nil, nil, nil,
+        rules, 'test1', 'go0i', 702, 101, nil, 1, 1,
         [Scaler::Listener::BoshScaler::Condition::MemoryAverageCondition],
         []
       )
@@ -175,21 +175,21 @@ describe Scaler::Listener::BoshScaler do
         'test0' => {
           :out => [
             { :name => 'go0o', :out_limit => 1000, :out_unit => 3 },
-            { :name => 'stop0o', :out_limit => 1000 }
+            { :name => 'stop0o', :out_limit => 1000, :out_unit => 1 }
           ],
           :in => [
             { :name => 'go0i', :in_limit => 1000 , :in_unit => 5 },
-            { :name => 'stop0i', :in_limit => 1000 }
+            { :name => 'stop0i', :in_limit => 1000, :in_unit => 1 }
           ]
         },
         'test1' => {
           :out => [
-            { :name => 'go1o', :out_limit => 1000 },
-            { :name => 'stop1o', :out_limit => 1000 }
+            { :name => 'go1o', :out_limit => 1000, :out_unit => 1 },
+            { :name => 'stop1o', :out_limit => 1000, :out_unit => 1 }
           ],
           :in => [
-            { :name => 'go1i', :in_limit => 1000 },
-            { :name => 'stop1i', :in_limit => 1000 }
+            { :name => 'go1i', :in_limit => 1000, :in_unit => 1 },
+            { :name => 'stop1i', :in_limit => 1000, :in_unit => 1 }
           ]
         }
       }

@@ -10,11 +10,14 @@ class Scaler::Listener::BoshScaler
     end
 
     class Base
-      def initialize(processor, deployment_name, job_name, threshold_proc)
+      attr_reader :threshold
+
+      def initialize(
+          processor, deployment_name, job_name, threshold)
         @processor = processor
         @deployment_name = deployment_name
         @job_name = job_name
-        @threshold_proc = threshold_proc
+        @threshold = threshold
       end
 
       def self.load(processors, deployment_name, job_name, options)
@@ -22,7 +25,7 @@ class Scaler::Listener::BoshScaler
           select_processor(processors),
           deployment_name,
           job_name,
-          create_threshold_proc(options))
+          create_threshold(options))
       end
 
       def self.select_processor(processors)
@@ -37,25 +40,40 @@ class Scaler::Listener::BoshScaler
         fail 'Not implemented'
       end
 
-      def self.create_threshold_proc(options)
+      def self.create_threshold(options)
         if options.key?('larger_than')
-          proc = proc { |value| value > options['larger_than'] }
+          {
+            :name => 'larger than',
+            :proc => proc { |value| value > options['larger_than'] },
+            :value => options['larger_than']
+          }
         elsif options.key?('smaller_than')
-          proc = proc { |value| value < options['smaller_than'] }
+          {
+            :name => 'smaller than',
+            :proc => proc { |value| value < options['smaller_than'] },
+            :value =>  options['smaller_than']
+          }
         else
           fail 'No condition given'
         end
-        proc
       end
 
       def match
         fail 'Not implemented'
       end
+
+      def to_s
+        name = self.class.to_s.split(/::/).last.gsub(/Condition$/, '')
+        "#{name} is #{@threshold[:name]} #{@threshold[:value]}"
+      end
     end
 
     class DurationAverageConditionBase < Base
-      def initialize(processor, deployment_name, job_name, threshold_proc, duration)
-        super(processor, deployment_name, job_name, threshold_proc)
+      def initialize(
+          processor, deployment_name, job_name, threshold,
+          duration)
+        super(
+          processor, deployment_name, job_name, threshold)
         @duration = duration
       end
 
@@ -64,7 +82,7 @@ class Scaler::Listener::BoshScaler
           select_processor(processors),
           deployment_name,
           job_name,
-          create_threshold_proc(options),
+          create_threshold(options),
           options['duration'])
       end
 
@@ -87,7 +105,7 @@ class Scaler::Listener::BoshScaler
           end
         end
 
-        @threshold_proc.call(usage_total / usage_num)
+        @threshold[:proc].call(usage_total / usage_num)
       end
 
       def sample(metric)
@@ -111,9 +129,10 @@ class Scaler::Listener::BoshScaler
 
     class CfVarzAverageCondition < DurationAverageConditionBase
       def initialize(
-          processor, deployment_name, job_name, threshold_proc,
+          processor, deployment_name, job_name, threshold,
           duration, varz_job_name, varz_key)
-        super(processor, deployment_name, job_name, threshold_proc, duration)
+        super(
+          processor, deployment_name, job_name, threshold, duration)
         @varz_job_name = varz_job_name
         @varz_key = varz_key
       end
@@ -123,7 +142,7 @@ class Scaler::Listener::BoshScaler
           select_processor(processors),
           deployment_name,
           job_name,
-          create_threshold_proc(options),
+          create_threshold(options),
           options['duration'],
           options['varz_job'],
           options['varz_key'])
@@ -150,11 +169,16 @@ class Scaler::Listener::BoshScaler
           end
         end
 
-        @threshold_proc.call(usage_total / usage_num)
+        @threshold[:proc].call(usage_total / usage_num)
       end
 
       def sample(metric)
         metric.value
+      end
+
+      def to_s
+        name = self.class.to_s.split(/::/).last.gsub(/Condition$/, '')
+        "#{name}(#{@varz_job_name}, #{@varz_key}) is #{@threshold[:name]} #{@threshold[:value]}"
       end
     end
 
@@ -171,7 +195,7 @@ class Scaler::Listener::BoshScaler
           usage_num += 1
         end
 
-        @threshold_proc.call(usage_total / usage_num)
+        @threshold[:proc].call(usage_total / usage_num)
       end
 
       def self.processor_class

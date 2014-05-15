@@ -24,3 +24,6 @@ listeners:
     bosh_rest: *rest
     interval: 60 # seconds
     buffer_size: 1000
+    ui:
+      enable: true
+      port: 8888

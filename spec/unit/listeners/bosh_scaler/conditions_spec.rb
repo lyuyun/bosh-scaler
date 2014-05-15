@@ -1,19 +1,21 @@
 require 'spec_helper'
 
 describe Scaler::Listener::BoshScaler::Condition::Base do
-  describe '.create_threshold_proc' do
+  describe '.create_threshold' do
     it 'generates a proc object from a `larger_than` value' do
-      proc = Scaler::Listener::BoshScaler::Condition::Base
-        .create_threshold_proc('larger_than' => 39)
-      expect(proc.call(39)).to be false
-      expect(proc.call(40)).to be true
+      threshold = Scaler::Listener::BoshScaler::Condition::Base
+        .create_threshold('larger_than' => 39)
+      expect(threshold[:proc].call(39)).to be false
+      expect(threshold[:proc].call(40)).to be true
+      expect(threshold[:name]).to eq('larger than')
     end
 
     it 'generates a proc object from a `smaller_than` value' do
-      proc = Scaler::Listener::BoshScaler::Condition::Base
-        .create_threshold_proc('smaller_than' => 39)
-      expect(proc.call(39)).to be false
-      expect(proc.call(38)).to be true
+      threshold = Scaler::Listener::BoshScaler::Condition::Base
+        .create_threshold('smaller_than' => 39)
+      expect(threshold[:proc].call(39)).to be false
+      expect(threshold[:proc].call(38)).to be true
+      expect(threshold[:name]).to eq('smaller than')
     end
   end
 end
@@ -66,15 +68,15 @@ describe Scaler::Listener::BoshScaler::Condition::DurationAverageConditionBase d
         )
       )
 
-      proc = instance_double(Proc)
+      threshold = { :proc => instance_double(Proc) }
       condition = Scaler::Listener::BoshScaler::Condition::DurationAverageConditionBase
-        .new(processor, 'deployment0', 'job0', proc, 10)
+        .new(processor, 'deployment0', 'job0', threshold, 10)
 
       expect(condition).to receive(:sample).with(event00.to_hash).and_return(1)
       expect(condition).to receive(:sample).with(event01.to_hash).and_return(1)
       expect(condition).to receive(:sample).with(event03.to_hash).and_return(1)
 
-      expect(proc).to receive(:call).with(1)
+      expect(threshold[:proc]).to receive(:call).with(1)
 
       condition.match
     end
@@ -107,14 +109,14 @@ describe Scaler::Listener::BoshScaler::Condition::LastSampleConditionBase do
         Bosh::Monitor::Events::Heartbeat.new(
            'deployment' => 'deployment0', 'job' => 'job1', 'agent_id' => 'skip2 '))
 
-      proc = double(Proc)
+      threshold = { :proc => instance_double(Proc) }
       condition = Scaler::Listener::BoshScaler::Condition::LastSampleConditionBase
-        .new(processor, 'deployment0', 'job0', proc)
+        .new(processor, 'deployment0', 'job0', threshold)
 
       expect(condition).to receive(:sample).with(event01.to_hash).and_return(1)
       expect(condition).to receive(:sample).with(event03.to_hash).and_return(1)
 
-      expect(proc).to receive(:call).with(1)
+      expect(threshold[:proc]).to receive(:call).with(1)
 
       condition.match
     end
@@ -175,15 +177,15 @@ describe Scaler::Listener::BoshScaler::Condition::CfVarzAverageCondition do
         )
       )
 
-      proc = double(proc)
+      threshold = { :proc => instance_double(Proc) }
       condition = Scaler::Listener::BoshScaler::Condition::CfVarzAverageCondition
-        .new(processor, 'deployment0', 'job0', proc, 10, 'varz_job0', 'varz_key0')
+        .new(processor, 'deployment0', 'job0', threshold, 10, 'varz_job0', 'varz_key0')
 
       expect(condition).to receive(:sample).with(event01).and_call_original
       expect(condition).to receive(:sample).with(event00).and_call_original
       expect(condition).to receive(:sample).with(event03).and_call_original
 
-      expect(proc).to receive(:call).with(1)
+      expect(threshold[:proc]).to receive(:call).with(1)
 
       condition.match
     end
