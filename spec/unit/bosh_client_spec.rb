@@ -128,6 +128,31 @@ describe Scaler::BoshClient do
     end
   end
 
+  describe '#fetch_tasks_recent' do
+    let(:response) {
+      {
+        :status => 200,
+        :body =>
+        '[' \
+        '{"id":31,"state":"error","description":"create deployment","timestamp":1400142555,"result":"result3231","user":"bosh31"},' \
+        '{"id":32,"state":"error","description":"create release","timestamp":1400142255,"result":"result32","user":"bosh32"}' \
+        ']'
+      }
+    }
+
+    it 'returns recent tasks' do
+      stub_request(
+        :get,
+        'https://admin:admin@bosh.example.com:25555/tasks'
+      ).to_return(response)
+
+      expect(client.fetch_tasks_recent[0]['id']).to eq(31)
+      expect(client.fetch_tasks_recent[0]['description']).to eq('create deployment')
+      expect(client.fetch_tasks_recent[1]['id']).to eq(32)
+      expect(client.fetch_tasks_recent[1]['description']).to eq('create release')
+    end
+  end
+
   describe '#fetch_task_state' do
     let(:response) {
       {

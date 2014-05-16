@@ -36,6 +36,16 @@ class Scaler::Listener::BoshScaler
           File.read(File.join(File.dirname(__FILE__), 'ui', 'index.erb'))
         ).result(binding)
       end
+
+      get '/log' do
+        tasks = @scaler.bosh_client.fetch_tasks_recent
+        tasks.delete_if do |task|
+          task['user'] != @scaler.user
+        end
+        ERB.new(
+          File.read(File.join(File.dirname(__FILE__), 'ui', 'log.erb'))
+        ).result(binding)
+      end
     end
   end
 end

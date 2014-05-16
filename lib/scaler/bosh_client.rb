@@ -81,6 +81,16 @@ module Scaler
       Yajl::Parser.parse(response.body)
     end
 
+    def fetch_tasks_recent
+      request = Net::HTTP::Get.new('/tasks')
+      response = send(request)
+      unless response.code == '200'
+        fail "Failed to fetch tasks recent from Director (HTTP CODE: #{response.code})"
+      end
+
+      Yajl::Parser.parse(response.body)
+    end
+
     def fetch_task_state(task_id)
       request = Net::HTTP::Get.new("/tasks/#{task_id}")
       response = send(request)

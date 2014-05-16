@@ -34,33 +34,68 @@ describe Scaler::Listener::BoshScaler do
     Bhm.logger = logger
   }
 
-  def expect_rule_defined(
-      rules,
-      deployment_name, job_name,
-      cooldown_time, out_limit, in_limit, out_unit, in_unit,
-      out_condition_classes, in_condition_classes)
-    expect(rules).to have_key(deployment_name)
-    expect(rules[deployment_name]).to have_key(job_name)
-    job = rules[deployment_name][job_name]
-    expect(job[:cooldown_time]).to eq(cooldown_time)
-    expect(job[:out_limit]).to eq(out_limit)
-    expect(job[:in_limit]).to eq(in_limit)
-    expect(job[:out_unit]).to eq(out_unit || 1)
-    expect(job[:in_unit]).to eq(in_unit || 1)
-    expect_list_matches(job[:out_conditions], out_condition_classes)
-    expect_list_matches(job[:in_conditions], in_condition_classes)
-  end
-
-  def expect_list_matches(instances, klasses)
-    checkees = instances.dup
-    klasses.each do |klass|
-      found = checkees.delete_if { |checkee| checkee.class == klass }
-      expect(found).not_to be_nil
+  describe '#initialize' do
+    it 'sets BOSH @user name' do
+      expect(scaler.user).to eq('admin')
     end
-    expect(checkees).to be_empty
+
+    context 'when UI is enabled' do
+      subject(:scaler) {
+        Scaler::Listener::BoshScaler.new(
+          'buffer_size' => 1000,
+          'interval' => 60,
+          'bosh_rest' => bosh_rest_options,
+          'ui' => { 'enable' => true, 'port' => '3939' }
+        )
+      }
+
+      it 'sets insatnce variables' do
+        expect(scaler.instance_variable_get('@ui_enabled')).to eq(true)
+        expect(scaler.instance_variable_get('@ui_port')).to eq('3939')
+      end
+
+      context 'when port number not given' do
+        it 'raises an error' do
+          expect {
+            Scaler::Listener::BoshScaler.new(
+              'buffer_size' => 1000,
+              'interval' => 60,
+              'bosh_rest' => bosh_rest_options,
+              'ui' => { 'enable' => true }
+            )
+          }.to raise_error('Port number for UI is not given')
+        end
+      end
+    end
   end
 
   describe '#update_rules' do
+    def expect_rule_defined(
+        rules,
+        deployment_name, job_name,
+        cooldown_time, out_limit, in_limit, out_unit, in_unit,
+        out_condition_classes, in_condition_classes)
+      expect(rules).to have_key(deployment_name)
+      expect(rules[deployment_name]).to have_key(job_name)
+      job = rules[deployment_name][job_name]
+      expect(job[:cooldown_time]).to eq(cooldown_time)
+      expect(job[:out_limit]).to eq(out_limit)
+      expect(job[:in_limit]).to eq(in_limit)
+      expect(job[:out_unit]).to eq(out_unit || 1)
+      expect(job[:in_unit]).to eq(in_unit || 1)
+      expect_list_matches(job[:out_conditions], out_condition_classes)
+      expect_list_matches(job[:in_conditions], in_condition_classes)
+    end
+
+    def expect_list_matches(instances, klasses)
+      checkees = instances.dup
+      klasses.each do |klass|
+        found = checkees.delete_if { |checkee| checkee.class == klass }
+        expect(found).not_to be_nil
+      end
+      expect(checkees).to be_empty
+    end
+
     it 'sets up rules' do
       expect_any_instance_of(Scaler::BoshClient)
         .to receive(:fetch_deployments)
@@ -165,6 +200,29 @@ describe Scaler::Listener::BoshScaler do
         .to receive(:drop_missing_entities)
 
       scaler.run
+    end
+
+    context 'when the UI is enabled' do
+      subject(:scaler) {
+        Scaler::Listener::BoshScaler.new(
+          'buffer_size' => 1000,
+          'interval' => 60,
+          'bosh_rest' => bosh_rest_options,
+          'ui' => { 'enable' => true, 'port' => '3939' }
+        )
+      }
+
+      it 'sets up UI' do
+        allow(EM).to receive(:reactor_running?).and_return(true)
+        allow(scaler).to receive(:update_rules)
+        allow(EM).to receive(:add_periodic_timer)
+        ui = instance_double(Scaler::Listener::BoshScaler::Ui, :run => nil)
+        expect(Scaler::Listener::BoshScaler::Ui)
+          .to receive(:new)
+          .with(scaler, '3939', logger)
+          .and_return(ui)
+        scaler.run
+      end
     end
   end
 

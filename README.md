@@ -37,6 +37,8 @@ Basic Configuration
 
 See `config/sample.yml` for the basic configuration.
 
+We recommend that you should create a new BOSH user such as `scaler` for AutoScaler with the `bosh create user` command so that you can filter BOSH tasks invoked by AutoScaler.
+
 
 Defining Scaling Rules
 ======================
@@ -142,6 +144,12 @@ properties:
     address: 192.168.15.139     # your AutoScaler address
     port: 4567                  # your AutoScaler port
 ```
+
+
+Web UI
+======
+
+BOSH AutoScaler has a Web UI on which you can confirm loaded rules and auto scaling task log. Access `http://<your_ip>:8888/` on your web brower.
 
 
 Contributing

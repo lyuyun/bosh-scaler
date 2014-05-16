@@ -1,6 +1,9 @@
 module Scaler::Listener
   class BoshScaler < Bosh::Monitor::Plugins::Base
     attr_reader :rules
+    attr_reader :deployments
+    attr_reader :bosh_client
+    attr_reader :user
 
     def initialize(options = {})
       @buffer_size = options['buffer_size']
@@ -11,6 +14,7 @@ module Scaler::Listener
         fail 'Port number for UI is not given' if options['ui']['port'].nil?
         @ui_port = options['ui']['port']
       end
+      @user = options['bosh_rest']['user']
       @bosh_client = Scaler::BoshClient.load(options['bosh_rest'])
       setup_processors(options)
       super
@@ -53,51 +57,65 @@ module Scaler::Listener
     def update_rules
       logger.debug('Syncing rules...')
       old_rules = @rules || {}
-      @rules = {}
+      rules = {}
+      deployments = {}
       now = Time.now
 
-      deployments = @bosh_client.fetch_deployments
-      deployments.each do |deployment_info|
-        deployment_name = deployment_info['name']
-        @rules[deployment_name] = {}
-        manifest = @bosh_client.fetch_deployment_manifest(deployment_name)
-        deployment = Scaler::Deployment.load_yaml(manifest)
+      deployment_info_list = @bosh_client.fetch_deployments
+      deployment_info_list.each do |deployment_info|
+        begin
+          deployment_name = deployment_info['name']
+          manifest = @bosh_client.fetch_deployment_manifest(deployment_name)
+          deployment = Scaler::Deployment.load_yaml(manifest)
 
-        deployment.scale.jobs.each do |_, job|
-          job_config = {
-            :name => job.name,
-            :cooldown_time => job.cooldown_time,
-            :last_fired_time => now,
-            :out_limit => job.out_limit,
-            :in_limit => job.in_limit,
-            :out_unit => job.out_unit || 1,
-            :in_unit => job.in_unit || 1,
-            :out_conditions => [],
-            :in_conditions => []
-          }
-          @rules[deployment_name][job.name] = job_config
-
-          job.out_conditions.each do |condition|
-            job_config[:out_conditions].push(
-              self.class::Condition
-                .load_by_definition(@processers, deployment_name, job.name, condition)
-            )
-          end
-
-          job.in_conditions.each do |condition|
-            job_config[:in_conditions].push(
-              self.class::Condition
-                .load_by_definition(@processers, deployment_name, job.name, condition)
-            )
-          end
-
-          if old_rules.key?(deployment_name) &&
-              old_rules[deployment_name].key?(job.name)
-            job_config[:last_fired_time] =
-              old_rules[deployment_name][job.name][:last_fired_time]
-          end
+          update_jobs(rules, old_rules, deployment, now)
+          deployments[deployment.name] = deployment
+          logger.debug("Loaded rules for job `#{deployment.scale.jobs.keys.join(' ')}` in #{deployment_name}")
+        rescue => e
+          logger.error("Error raised while syncing rules for #{deployment_info}: #{e}")
         end
-        logger.debug("Loaded rules for `#{deployment.scale.jobs.keys.join(' ')}` in #{deployment_name}")
+      end
+
+      @rules = rules
+      @deployments = deployments
+    end
+
+    def update_jobs(rules, old_rules, deployment, now)
+      rules[deployment.name] = {}
+
+      deployment.scale.jobs.each do |_, job|
+        job_config = {
+          :name => job.name,
+          :cooldown_time => job.cooldown_time,
+          :last_fired_time => now,
+          :out_limit => job.out_limit,
+          :in_limit => job.in_limit,
+          :out_unit => job.out_unit || 1,
+          :in_unit => job.in_unit || 1,
+          :out_conditions => [],
+          :in_conditions => []
+        }
+        rules[deployment.name][job.name] = job_config
+
+        job.out_conditions.each do |condition|
+          job_config[:out_conditions].push(
+            self.class::Condition
+              .load_by_definition(@processers, deployment.name, job.name, condition)
+          )
+        end
+
+        job.in_conditions.each do |condition|
+          job_config[:in_conditions].push(
+            self.class::Condition
+              .load_by_definition(@processers, deployment.name, job.name, condition)
+          )
+        end
+
+        if old_rules.key?(deployment.name) &&
+            old_rules[deployment.name].key?(job.name)
+          job_config[:last_fired_time] =
+            old_rules[deployment.name][job.name][:last_fired_time]
+        end
       end
     end
 

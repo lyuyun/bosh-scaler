@@ -26,6 +26,7 @@
         <div class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
             <li class="active"><a href="#">Home</a></li>
+            <li><a href="log">Log</a></li>
           </ul>
         </div>
       </div>
@@ -46,6 +47,7 @@
           <table class="table table-striped table-bordered table-condensed">
             <tr>
               <th>Job Name</th>
+              <th>Current Instances</th>
               <th>Cooldown</th>
               <th>Out Limit</th>
               <th>Out Unit</th>
@@ -55,11 +57,27 @@
               <th>In Conditions</th>
             </tr>
             <% jobs.each do |job_name, job| %>
-            <tr>
+            <%
+               insufficiet_ips = []
+               @scaler.deployments[deployment_name].scale.networks.each do |_, network|
+                  if network.static_ips.size < job[:out_limit]
+                    insufficiet_ips << network.name
+                  end
+               end
+            %>
+            <tr class="<%= insufficiet_ips.empty? ? '' : 'warning' %>">
               <th><%= h(job[:name]) %></th>
+              <td>
+                <%= h(@scaler.deployments[deployment_name].job(job[:name]).size) %>
+              </td>
               <td><%= h(job[:cooldown_time]) %></td>
 
-              <td><%= h(job[:out_limit]) %></td>
+              <td>
+                <%= h(job[:out_limit]) %>
+                <% unless insufficiet_ips.empty? %>
+                <p><em>Insufficiet staic IPs: <%= h(insufficiet_ips.join(', ')) %></em></p>
+                <% end %>
+              </td>
               <td><%= h(job[:out_unit]) %></td>
               <td>
                 <ul>
@@ -82,6 +100,21 @@
             </tr>
             <% end %>
           </table>
+          <table class="table table-striped table-bordered table-condensed">
+            <tr>
+              <th>Network Name</th>
+              <th>Static IPs</th>
+            </tr>
+            <% @scaler.deployments[deployment_name].scale.networks.each do |_, network| %>
+            <td><%= h(network.name) %></td>
+            <td>
+              <ul>
+                <% network.static_ips.each do |ip| %>
+                <li><%= h(ip) %></li>
+                <% end %>
+              </ul>
+            </td>
+            <% end %>
           <% end %>
         </div>
       </div>

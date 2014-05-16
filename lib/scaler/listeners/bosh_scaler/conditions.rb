@@ -111,6 +111,11 @@ class Scaler::Listener::BoshScaler
       def sample(metric)
         fail 'Not implemented'
       end
+
+      def to_s
+        name = self.class.to_s.split(/::/).last.gsub(/Condition$/, '')
+        "#{name} (#{@duration} secs) is #{@threshold[:name]} #{@threshold[:value]}"
+      end
     end
 
     class CpuAverageCondition < DurationAverageConditionBase
@@ -122,7 +127,7 @@ class Scaler::Listener::BoshScaler
     end
 
     class MemoryAverageCondition < DurationAverageConditionBase
-      def sample(metrics)
+      def sample(metric)
         metric[:vitals]['mem']['percent'].to_f
       end
     end
@@ -178,7 +183,7 @@ class Scaler::Listener::BoshScaler
 
       def to_s
         name = self.class.to_s.split(/::/).last.gsub(/Condition$/, '')
-        "#{name}(#{@varz_job_name}, #{@varz_key}) is #{@threshold[:name]} #{@threshold[:value]}"
+        "#{name} (#{@varz_job_name}, #{@varz_key}) is #{@threshold[:name]} #{@threshold[:value]}"
       end
     end
 

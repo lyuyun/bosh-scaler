@@ -3,9 +3,12 @@ module Scaler
     attr_reader :resource_pools
     attr_reader :jobs
     attr_reader :scale
+    attr_reader :name
 
     def initialize(manifest)
       @resource_pools = parse_resource_pools(manifest)
+
+      @name = manifest['deployment']
 
       @jobs = parse_jobs(manifest)
       calculate_standby_size(manifest)

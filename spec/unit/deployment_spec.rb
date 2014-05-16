@@ -9,6 +9,9 @@ describe Scaler::Deployment do
 
   describe '#initialize' do
     it 'loads manifest and construct objects' do
+      expect(deployment.name)
+        .to eq('test')
+
       expect(deployment.jobs.keys)
         .to eq(%w{job0a job0b job1a job2a})
       expect(deployment.resource_pools.keys)
