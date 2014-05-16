@@ -1,5 +1,5 @@
 ---
-deployment: test0
+name: test0
 director_uuid: test-uuid
 
 resource_pools:

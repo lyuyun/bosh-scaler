@@ -8,7 +8,7 @@ module Scaler
     def initialize(manifest)
       @resource_pools = parse_resource_pools(manifest)
 
-      @name = manifest['deployment']
+      @name = manifest['name']
 
       @jobs = parse_jobs(manifest)
       calculate_standby_size(manifest)
