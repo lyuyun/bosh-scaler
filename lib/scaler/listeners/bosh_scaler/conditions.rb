@@ -70,8 +70,7 @@ class Scaler::Listener::BoshScaler
 
     class DurationAverageConditionBase < Base
       def initialize(
-          processor, deployment_name, job_name, threshold,
-          duration)
+          processor, deployment_name, job_name, threshold, duration)
         super(
           processor, deployment_name, job_name, threshold)
         @duration = duration
@@ -90,7 +89,7 @@ class Scaler::Listener::BoshScaler
         Scaler::Listener::BoshScaler::HeartbeatProcessor
       end
 
-      def match
+      def calc
         cutoff_time = Time.now - @duration
         usage_total = 0.0
         usage_num = 0
@@ -104,8 +103,11 @@ class Scaler::Listener::BoshScaler
             usage_num += 1
           end
         end
+        usage_total / usage_num
+      end
 
-        @threshold[:proc].call(usage_total / usage_num)
+      def match
+        @threshold[:proc].call(calc)
       end
 
       def sample(metric)
@@ -114,7 +116,7 @@ class Scaler::Listener::BoshScaler
 
       def to_s
         name = self.class.to_s.split(/::/).last.gsub(/Condition$/, '')
-        "#{name} (#{@duration} secs) is #{@threshold[:name]} #{@threshold[:value]}"
+        "#{name} (#{@duration} secs) is #{@threshold[:name]} #{@threshold[:value]} (#{calc})"
       end
     end
 
@@ -157,7 +159,7 @@ class Scaler::Listener::BoshScaler
         Scaler::Listener::BoshScaler::CfVarzProcessor
       end
 
-      def match
+      def calc
         cutoff_time = Time.now - @duration
         usage_total = 0.0
         usage_num = 0
@@ -174,7 +176,11 @@ class Scaler::Listener::BoshScaler
           end
         end
 
-        @threshold[:proc].call(usage_total / usage_num)
+        usage_total / usage_num
+      end
+
+      def match
+        @threshold[:proc].call(calc)
       end
 
       def sample(metric)
@@ -183,12 +189,12 @@ class Scaler::Listener::BoshScaler
 
       def to_s
         name = self.class.to_s.split(/::/).last.gsub(/Condition$/, '')
-        "#{name} (#{@varz_job_name}, #{@varz_key}) is #{@threshold[:name]} #{@threshold[:value]}"
+        "#{name} (#{@varz_job_name}, #{@varz_key}) is #{@threshold[:name]} #{@threshold[:value]} (#{calc})"
       end
     end
 
     class LastSampleConditionBase < Base
-      def match
+      def calc
         usage_total = 0.0
         usage_num = 0
 
@@ -200,7 +206,16 @@ class Scaler::Listener::BoshScaler
           usage_num += 1
         end
 
-        @threshold[:proc].call(usage_total / usage_num)
+        usage_total / usage_num
+      end
+
+      def match
+        @threshold[:proc].call(calc)
+      end
+
+      def to_s
+        name = self.class.to_s.split(/::/).last.gsub(/Condition$/, '')
+        "#{name} is #{@threshold[:name]} #{@threshold[:value]} (#{calc})"
       end
 
       def self.processor_class
