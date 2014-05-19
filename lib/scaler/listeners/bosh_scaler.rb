@@ -60,7 +60,6 @@ module Scaler::Listener
       old_rules = @rules || {}
       rules = {}
       deployments = {}
-      now = Time.now
 
       deployment_info_list = @bosh_client.fetch_deployments
       deployment_info_list.each do |deployment_info|
@@ -69,7 +68,7 @@ module Scaler::Listener
           manifest = @bosh_client.fetch_deployment_manifest(deployment_name)
           deployment = Scaler::Deployment.load_yaml(manifest)
 
-          update_jobs(rules, old_rules, deployment, now)
+          update_jobs(rules, old_rules, deployment)
           deployments[deployment.name] = deployment
           logger.debug("Loaded rules for job `#{deployment.scale.jobs.keys.join(' ')}` in #{deployment_name}")
         rescue => e
@@ -81,14 +80,14 @@ module Scaler::Listener
       @deployments = deployments
     end
 
-    def update_jobs(rules, old_rules, deployment, now)
+    def update_jobs(rules, old_rules, deployment)
       rules[deployment.name] = {}
 
       deployment.scale.jobs.each do |_, job|
         job_config = {
           :name => job.name,
           :cooldown_time => job.cooldown_time,
-          :last_fired_time => now,
+          :last_fired_time => nil,
           :out_limit => job.out_limit,
           :in_limit => job.in_limit,
           :out_unit => job.out_unit || 1,
@@ -162,7 +161,7 @@ module Scaler::Listener
         result[deployment_name] = { :out => [], :in => [] }
 
         jobs.each do |_, job|
-          next if job[:last_fired_time] > now - job[:cooldown_time]
+          next if job[:last_fired_time] && job[:last_fired_time] > now - job[:cooldown_time]
 
           # If :out_conditions matches, skip evaluating :in_conditions
           # Scaling out has the priority

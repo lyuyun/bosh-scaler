@@ -160,7 +160,8 @@ describe Scaler::Listener::BoshScaler do
       scaler.update_rules
       rules = scaler.instance_variable_get('@rules')
       expect(rules['test2']['job0'][:last_fired_time])
-        .to eq(step1)
+        .to eq(nil)
+      rules['test2']['job0'][:last_fired_time] = step1 # inject
 
       step2 = step1 + 1000
       allow(Time).to receive(:now).and_return(step2)
@@ -169,7 +170,7 @@ describe Scaler::Listener::BoshScaler do
       expect(rules['test2']['job0'][:last_fired_time])
         .to eq(step1)
       expect(rules['test2']['job1'][:last_fired_time])
-        .to eq(step2)
+        .to eq(nil)
     end
   end
 

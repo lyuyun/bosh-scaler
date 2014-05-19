@@ -38,6 +38,7 @@
       <h1>BOSH AutoScaler</h1>
 
       <h2>Deployments</h2>
+      <% now = Time.now %>
       <% @scaler.rules.each do |deployment_name, jobs| %>
 
       <div class="panel panel-default">
@@ -50,18 +51,19 @@
               <th>Job Name</th>
               <th>Current Instances</th>
               <th>Cooldown</th>
+              <th>Last Event</th>
               <th>Out Limit</th>
               <th>Out Unit</th>
-              <th>Out Conditions</th>
+              <th>Out Conditions (OR)</th>
               <th>In Limit</th>
               <th>In Unit</th>
-              <th>In Conditions</th>
+              <th>In Conditions (AND)</th>
             </tr>
             <% jobs.each do |job_name, job| %>
             <%
                insufficiet_ips = []
                @scaler.deployments[deployment_name].scale.networks.each do |_, network|
-                  if network.static_ips.size < job[:out_limit]
+                  if network.static_ips.size < job[:out_limit] - @scaler.deployments[deployment_name].job(job[:name]).size
                     insufficiet_ips << network.name
                   end
                end
@@ -72,6 +74,16 @@
                 <%= h(@scaler.deployments[deployment_name].job(job[:name]).size) %>
               </td>
               <td><%= h(job[:cooldown_time]) %></td>
+              <td>
+                <% if job[:last_fired_time].nil? %>
+                Not Executed Yet
+                <% else %>
+                <%= h(job[:last_fired_time]) %>
+                <% if job[:last_fired_time] + job[:cooldown_time] > now %>
+                (cooling down for another <%= h((job[:last_fired_time] + job[:cooldown_time] - now).to_i) %> seconds)
+                <% end %>
+                <% end %>
+              </td>
 
               <td>
                 <%= h(job[:out_limit]) %>
@@ -83,7 +95,14 @@
               <td>
                 <ul>
                   <% job[:out_conditions].each do |condition| %>
-                  <li><%= h(condition.to_s) %></li>
+                  <li>
+                    <% match = condition.match %>
+                    <% if match %>
+                    <em><%= h(condition.to_s) %></em>
+                    <% else %>
+                    <%= h(condition.to_s) %>
+                    <% end %>
+                  </li>
                   <% end %>
                 </ul>
               </td>
@@ -93,7 +112,14 @@
               <td>
                 <ul>
                   <% job[:in_conditions].each do |condition| %>
-                  <li><%= h(condition.to_s) %></li>
+                  <li>
+                    <% match = condition.match %>
+                    <% if match %>
+                    <em><%= h(condition.to_s) %></em>
+                    <% else %>
+                    <%= h(condition.to_s) %>
+                    <% end %>
+                  </li>
                   <% end %>
                 </ul>
               </td>
