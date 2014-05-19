@@ -46,6 +46,12 @@ class Scaler::Listener::BoshScaler
           File.read(File.join(File.dirname(__FILE__), 'ui', 'log.erb'))
         ).result(binding)
       end
+
+      get '/events' do
+        ERB.new(
+          File.read(File.join(File.dirname(__FILE__), 'ui', 'events.erb'))
+        ).result(binding)
+      end
     end
   end
 end

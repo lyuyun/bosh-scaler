@@ -82,4 +82,26 @@ describe Scaler::Listener::BoshScaler::HeartbeatProcessor do
     end
   end
 
+  describe '#updated_time' do
+    it 'returnes the updated time of the given buffer' do
+      9.times do
+        processor.process(
+          Bosh::Monitor::Events::Heartbeat.new(
+            'agent_id' => 'test',
+            'timestamp' => Time.now.to_i.to_i
+          )
+        )
+      end
+
+      updated_time = Time.now + 10
+      processor.process(
+          Bosh::Monitor::Events::Heartbeat.new(
+            'agent_id' => 'test',
+            'timestamp' => updated_time.to_i
+          )
+      )
+
+      expect(processor.updated_time('test').to_i).to eq(updated_time.to_i)
+    end
+  end
 end

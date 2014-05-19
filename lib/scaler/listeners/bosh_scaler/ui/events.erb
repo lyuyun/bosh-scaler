@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
 
-    <title>BOSH AutoScaler Log</title>
+    <title>BOSH AutoScaler Events</title>
   </head>
 
   <body style="padding-top: 50px;">
@@ -26,8 +26,8 @@
         <div class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
             <li><a href="/">Home</a></li>
-            <li class="active"><a href="#">Log</a></li>
-            <li><a href="events">Events</a></li>
+            <li><a href="log">Log</a></li>
+            <li class="active"><a href="#">Events</a></li>
           </ul>
         </div>
       </div>
@@ -37,27 +37,23 @@
 
       <h1>BOSH AutoScaler</h1>
 
-      <h2>Task Log</h2>
+      <h2>Events</h2>
 
-      <table class="table table-striped table-bordered table-condensed">
-        <tr>
-          <th>ID</th>
-          <th>Result</th>
-          <th>Time</th>
-          <th>User</th>
-          <th>Message</th>
-        </tr>
-
-        <% tasks.each do |task| %>
-        <tr class="<%= task['state'] != 'done' ? 'warning' : '' %>">
-          <td><%= h(task['id']) %></td>
-          <td><%= h(task['state']) %></td>
-          <td><%= h(Time.at(task['timestamp'])) %></td>
-          <td><%= h(task['user']) %></td>
-          <td><%= h(task['result']) %></td>
-        </tr>
-        <% end %>
-      </table>
+      <% @scaler.processors.each do |processor| %>
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3><%= h(processor.class) %></h3>
+        </div>
+        <div class="panel-body">
+          <p><%= h(processor.buffers.size) %> event buffers:</p>
+          <ul>
+            <% processor.buffers.each do |buffer_name, buffer| %>
+            <li><%= h(buffer_name) %> <span style="font-style: italic">(<%= h(Time.at(processor.updated_time(buffer_name))) %>)</span></li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
+      <% end %>
 
     </div>
 

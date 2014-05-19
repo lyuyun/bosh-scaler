@@ -4,6 +4,7 @@ module Scaler::Listener
     attr_reader :deployments
     attr_reader :bosh_client
     attr_reader :user
+    attr_reader :processors
 
     def initialize(options = {})
       @buffer_size = options['buffer_size']
@@ -21,9 +22,9 @@ module Scaler::Listener
     end
 
     def setup_processors(options)
-      @processers = []
-      @processers << HeartbeatProcessor.new(@buffer_size)
-      @processers << CfVarzProcessor.new(@buffer_size)
+      @processors = []
+      @processors << HeartbeatProcessor.new(@buffer_size)
+      @processors << CfVarzProcessor.new(@buffer_size)
     end
 
     def run
@@ -42,7 +43,7 @@ module Scaler::Listener
         try_rules
       end
       EM.add_periodic_timer(60 * 60 * 24) do
-        @processers.each do |processor|
+        @processors.each do |processor|
           processor.drop_missing_entities
         end
       end
@@ -100,14 +101,14 @@ module Scaler::Listener
         job.out_conditions.each do |condition|
           job_config[:out_conditions].push(
             self.class::Condition
-              .load_by_definition(@processers, deployment.name, job.name, condition)
+              .load_by_definition(@processors, deployment.name, job.name, condition)
           )
         end
 
         job.in_conditions.each do |condition|
           job_config[:in_conditions].push(
             self.class::Condition
-              .load_by_definition(@processers, deployment.name, job.name, condition)
+              .load_by_definition(@processors, deployment.name, job.name, condition)
           )
         end
 
@@ -208,7 +209,7 @@ module Scaler::Listener
     end
 
     def process(event)
-      @processers.each do |processor|
+      @processors.each do |processor|
         processor.process(event)
       end
     end

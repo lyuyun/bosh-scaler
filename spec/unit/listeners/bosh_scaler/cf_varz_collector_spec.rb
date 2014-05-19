@@ -101,4 +101,27 @@ describe Scaler::Listener::BoshScaler::CfVarzProcessor do
         ['keep0/koala/0/key0', 'keep1/koala/0/key0', 'keep2/koala/0/key0'])
     end
   end
+
+  describe '#updated_time' do
+    it 'returnes the updated time of the given buffer' do
+      9.times do
+        processor.process(
+          Scaler::CfVarzMetric.new(
+            'deployment' => 'test', 'job' => 'koala', 'index' => 0, 'key' => 'key0',
+            'timestamp' => Time.now.to_i
+          )
+        )
+      end
+
+      updated_time = Time.now + 100
+      processor.process(
+          Scaler::CfVarzMetric.new(
+            'deployment' => 'test', 'job' => 'koala', 'index' => 0, 'key' => 'key0',
+            'timestamp' => updated_time.to_i
+          )
+      )
+
+      expect(processor.updated_time('test/koala/0/key0').to_i).to eq(updated_time.to_i)
+    end
+  end
 end

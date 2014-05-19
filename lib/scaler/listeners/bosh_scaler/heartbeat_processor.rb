@@ -25,5 +25,9 @@ class Scaler::Listener::BoshScaler
       end
       buffer.unshift(event.to_hash)
     end
+
+    def updated_time(buffer_name)
+      Time.at(@buffers[buffer_name].first[:timestamp])
+    end
   end
 end
