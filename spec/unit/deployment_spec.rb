@@ -13,7 +13,7 @@ describe Scaler::Deployment do
         .to eq('test')
 
       expect(deployment.jobs.keys)
-        .to eq(%w{job0a job0b job1a job2a})
+        .to eq(%w{job0a job0b job1a job2a job2b})
       expect(deployment.resource_pools.keys)
         .to eq(%w{pool0 pool1 pool2})
 

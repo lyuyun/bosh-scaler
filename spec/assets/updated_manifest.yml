@@ -22,7 +22,7 @@ jobs:
     instances: 2
     resource_pool: pool1
   - name: job2a
-    instances: 3
+    instances: 4
     resource_pool: pool2
     networks:
       - name: net00
@@ -30,6 +30,9 @@ jobs:
           - 10.39.3.9
           - 10.39.3.10
           - 10.39.3.101
+  - name: job2b
+    instances: 5
+    resource_pool: pool2
 
 scale:
   jobs:
@@ -59,6 +62,15 @@ scale:
         conditions:
           - class: dummy_in0b
             additional: value_in0b
+    - name: job2b
+      cooldown: 100
+      out:
+        limit: 10
+        conditions: []
+      in:
+        limit: 3
+        conditions: []
+
   networks:
     - name: net00
       static_ips:

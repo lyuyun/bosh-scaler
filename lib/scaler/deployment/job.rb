@@ -71,11 +71,27 @@ module Scaler
       end
 
       def increase_size_with_care(num)
+        scale_job = @deployment.scale.job(@name)
+        if scale_job
+          limit = scale_job.out_limit
+          if @size + num > limit
+            num = limit - @size
+          end
+        end
+
         increase_size(num)
         add_static_ip(num)
       end
 
       def decrease_size_with_care(num)
+        scale_job = @deployment.scale.job(@name)
+        if scale_job
+          limit = scale_job.in_limit
+          if @size - num < limit
+            num = @size - limit
+          end
+        end
+
         decrease_size(num)
         remove_static_ip(num)
       end

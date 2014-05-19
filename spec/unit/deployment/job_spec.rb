@@ -104,6 +104,18 @@ describe Scaler::Deployment::Job do
       expect(job).to receive(:add_static_ip).with(2)
       job.increase_size_with_care(2)
     end
+
+    context 'when the given number is beyond the limit' do
+      subject(:job) {
+        deployment.job('job2b')
+      }
+
+      it 'increases the size to the limit' do
+        expect(job).to receive(:increase_size).with(5)
+        expect(job).to receive(:add_static_ip).with(5)
+        job.increase_size_with_care(10_000)
+      end
+    end
   end
 
   describe '#decrease_size_with_care' do
@@ -115,6 +127,18 @@ describe Scaler::Deployment::Job do
       expect(job).to receive(:decrease_size).with(2)
       expect(job).to receive(:remove_static_ip).with(2)
       job.decrease_size_with_care(2)
+    end
+
+    context 'when the given number is beyond the limit' do
+      subject(:job) {
+        deployment.job('job2b')
+      }
+
+      it 'decreases the size to the limit' do
+        expect(job).to receive(:decrease_size).with(2)
+        expect(job).to receive(:remove_static_ip).with(2)
+        job.decrease_size_with_care(10_000)
+      end
     end
   end
 end
